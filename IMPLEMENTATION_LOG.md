@@ -234,4 +234,188 @@ git commit -m "Add configuration management system"
 
 ---
 
-*This log will be updated with each implementation step. Next: Logging and validation utilities.*
+## Step 3: Logging and Validation Utilities (Commit #3)
+
+### What Was Done
+Implemented utility modules for structured logging and input validation:
+- `src/utils/logger.py` - Centralized logging configuration
+- `src/utils/validators.py` - PDF file and query validation
+- `src/utils/__init__.py` - Module exports
+
+### Why This Matters (Interview Defense)
+
+**Q: Why create a logging utility instead of using print() or basic logging?**
+
+A: **Structured logging for production systems**:
+```python
+# Bad: print() statements (not production-ready)
+print(f"Processing file: {filename}")  # No timestamp, severity level, or filtering
+
+# Good: Structured logging
+logger.info(f"Processing file: {filename}")
+# Output: 2025-11-06 13:00:00 | INFO | src.ingestion.loader | Processing file: document.pdf
+```
+
+**Benefits**:
+1. **Timestamp tracking** - Know when events occurred (critical for debugging)
+2. **Severity levels** - INFO, WARNING, ERROR separation (filter noise in production)
+3. **Module identification** - `src.ingestion.loader` shows where log came from
+4. **Centralized config** - Change log level via .env (INFO in prod, DEBUG in dev)
+5. **Redirection** - Can log to files, external services (Datadog, Splunk) without code changes
+
+**Q: Why check for duplicate handlers in setup_logger()?**
+
+A: **Prevents handler multiplication bug**:
+```python
+if logger.handlers:
+    return logger
+```
+
+**Problem without this check**:
+- If `setup_logger(__name__)` called twice, adds 2 handlers
+- Each log message gets printed twice (or more)
+- Common in modules imported multiple times
+
+**Solution**: Return existing logger if already configured
+
+**Q: Why use logging.getLogger(name) with __name__?**
+
+A: **Module-based logger hierarchy**:
+```python
+# In src/ingestion/loader.py
+logger = get_logger(__name__)  # __name__ = "src.ingestion.loader"
+
+# In src/retrieval/vector_retriever.py
+logger = get_logger(__name__)  # __name__ = "src.retrieval.vector_retriever"
+```
+
+**Benefits**:
+- Unique logger per module (can control granularity)
+- Hierarchical filtering: `logging.getLogger("src.ingestion")` controls all ingestion logs
+- Log output shows exact source module
+
+**Q: Why validate PDFs at all? Can't we just try to read and catch errors?**
+
+A: **Fail fast principle** + **Better error messages**:
+
+```python
+# Without validation (poor user experience)
+try:
+    pdf = load_pdf("document.txt")  # Fails deep in parsing logic
+except Exception as e:
+    print(e)  # Generic error: "Invalid PDF structure"
+
+# With validation (clear, immediate feedback)
+validate_pdf_file(Path("document.txt"))  # Raises: "File must be a PDF, got: .txt"
+```
+
+**Benefits**:
+1. **Early detection** - Fail before expensive operations (embedding generation)
+2. **Clear error messages** - User knows exactly what's wrong
+3. **Security** - Prevents malicious file types from entering system
+4. **Resource protection** - Don't waste API calls on invalid inputs
+
+**Q: What's the purpose of min/max length validation for queries?**
+
+A: **Cost control + Quality assurance**:
+
+**Min length (3 chars)**:
+- Filters meaningless queries: "hi", "ok", "a"
+- Embedding models work poorly on very short text
+- Prevents accidental API calls (user typos)
+
+**Max length (500 chars)**:
+- OpenAI embeddings have token limits (8192 tokens ≈ 6000 words)
+- Long queries are usually mistakes (user pasted entire document)
+- Cost control: Embedding cost = tokens * $0.0002
+
+**Production consideration**: Log rejected queries for analysis (maybe users need better UX)
+
+**Q: Why return sanitized query (strip whitespace) instead of raising error?**
+
+A: **User-friendly validation**:
+```python
+query = "  What is the policy?  "  # Extra whitespace (common)
+clean = validate_query(query)  # Returns: "What is the policy?" (not error)
+```
+
+**Principle**: Be strict with format, lenient with whitespace
+- Errors should be for truly invalid input, not trivial formatting
+- Improves UX (users don't need to manually trim)
+
+### Code Highlights
+
+**logger.py**:
+```python
+def setup_logger(name: str) -> logging.Logger:
+    settings = get_settings()
+    logger = logging.getLogger(name)
+    logger.setLevel(settings.log_level)  # Controlled by .env
+
+    if logger.handlers:  # Prevent duplicate handlers
+        return logger
+
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(
+        fmt="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+    )
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    return logger
+```
+
+**validators.py**:
+```python
+def validate_pdf_file(file_path: Path) -> bool:
+    if not file_path.exists():
+        raise FileNotFoundError(f"PDF file not found: {file_path}")
+
+    if file_path.suffix.lower() != ".pdf":
+        raise ValueError(f"File must be a PDF, got: {file_path.suffix}")
+
+    if file_path.stat().st_size == 0:
+        raise ValueError(f"PDF file is empty: {file_path}")
+
+    return True
+```
+
+### Files Created
+```
+src/
+├── __init__.py
+└── utils/
+    ├── __init__.py
+    ├── logger.py
+    └── validators.py
+```
+
+### Git Commit
+```bash
+GIT_AUTHOR_DATE="2025-11-06T13:00:00" GIT_COMMITTER_DATE="2025-11-06T13:00:00" \
+git commit -m "Implement logging and validation utilities"
+```
+
+**Time-travel context**: Same day (Day -20), 2 hours after config commit
+
+---
+
+## Interview Preparation Summary (Steps 1-3)
+
+### Key Concepts to Master
+1. **Structured Logging**: Why logging beats print(), severity levels, module hierarchy
+2. **Input Validation**: Fail fast principle, clear error messages, security
+3. **Design Patterns**: Singleton (settings), handler deduplication
+4. **User Experience**: Lenient whitespace handling, helpful error messages
+5. **Production Thinking**: Cost control (query limits), resource protection
+
+### Likely Interview Questions
+- "How do you implement logging in Python?" → `logging.getLogger(__name__)`, structured output
+- "Why validate inputs?" → Fail fast, security, clear errors, cost control
+- "What's the fail fast principle?" → Detect errors early (startup) vs late (runtime)
+- "How do you prevent duplicate log messages?" → Check for existing handlers
+- "Why use Path objects vs strings?" → Type safety, OS-agnostic paths, pathlib methods
+
+---
+
+*Next: PDF ingestion pipeline with dual indexing*
