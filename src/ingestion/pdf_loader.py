@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List, Dict
 import pypdf
-from langchain.schema import Document
+from langchain_core.documents import Document
 from src.utils import get_logger, validate_pdf_file
 
 

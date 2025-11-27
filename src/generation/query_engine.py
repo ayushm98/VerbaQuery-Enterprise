@@ -1,7 +1,7 @@
 from typing import List, Dict
-from langchain.schema import Document
+from langchain_core.documents import Document
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from config import get_settings
 from config.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE, NO_CONTEXT_RESPONSE
 from src.retrieval import HybridRetriever, FlashrankReranker

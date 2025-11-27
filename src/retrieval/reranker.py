@@ -1,5 +1,5 @@
 from typing import List
-from langchain.schema import Document
+from langchain_core.documents import Document
 from flashrank import Ranker, RerankRequest
 from config import get_settings
 from src.utils import get_logger

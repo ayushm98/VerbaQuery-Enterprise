@@ -1,7 +1,7 @@
 from typing import List
 from pathlib import Path
 import pickle
-from langchain.schema import Document
+from langchain_core.documents import Document
 from config import get_settings
 from src.utils import get_logger
 

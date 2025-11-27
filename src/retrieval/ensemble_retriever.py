@@ -1,5 +1,5 @@
 from typing import List, Dict
-from langchain.schema import Document
+from langchain_core.documents import Document
 from config import get_settings
 from src.utils import get_logger
 from .vector_retriever import VectorRetriever
