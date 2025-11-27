@@ -27,11 +27,13 @@ def get_api_key() -> str:
 def is_cloud_environment() -> bool:
     """Detect if running in Streamlit Cloud or similar cloud environment."""
     # Check for common cloud environment indicators
-    return (
-        os.getenv("STREAMLIT_SHARING_MODE") is not None or
-        os.getenv("STREAMLIT_CLOUD") is not None or
-        HAS_STREAMLIT and hasattr(st, "secrets") and "OPENAI_API_KEY" in st.secrets
-    )
+    cloud_indicators = [
+        os.getenv("STREAMLIT_SHARING_MODE"),
+        os.getenv("STREAMLIT_CLOUD"),
+        os.getenv("HOSTNAME", "").startswith("streamlit"),
+        not os.path.exists("./data")  # Local data dir doesn't exist in cloud
+    ]
+    return any(cloud_indicators)
 
 
 def get_writable_dir() -> Path:
@@ -84,12 +86,13 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # Use writable directory in cloud environments
-        base_dir = get_writable_dir()
+        # Always use temp directory for indexes since PDFs are uploaded dynamically
+        # This works in both local and cloud environments
+        base_dir = Path(tempfile.gettempdir())
 
-        # Update paths to use writable directory
-        self.chroma_persist_directory = base_dir / "indexes" / "chroma"
-        self.bm25_index_path = base_dir / "indexes" / "bm25_index.pkl"
+        # Update paths to use temp directory
+        self.chroma_persist_directory = base_dir / "rag_indexes" / "chroma"
+        self.bm25_index_path = base_dir / "rag_indexes" / "bm25_index.pkl"
 
         # Ensure directory paths exist
         self.chroma_persist_directory.parent.mkdir(parents=True, exist_ok=True)
