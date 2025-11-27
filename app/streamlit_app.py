@@ -200,9 +200,10 @@ def display_sources(sources):
             if source['rerank_score'] is not None:
                 st.markdown(f"**Relevance Score:** {source['rerank_score']:.4f}")
 
-                # Relevance bar
+                # Relevance bar - convert to float to ensure compatibility
+                score_value = float(min(source['rerank_score'], 1.0))
                 st.progress(
-                    min(source['rerank_score'], 1.0),
+                    score_value,
                     text=f"Relevance: {source['rerank_score']:.1%}"
                 )
 
