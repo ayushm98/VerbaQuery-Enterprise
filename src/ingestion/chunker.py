@@ -11,16 +11,7 @@ logger = get_logger(__name__)
 class SemanticChunker:
     """
     Chunk documents using semantic-aware splitting strategy.
-
-    Interview Defense:
-    - Q: Why RecursiveCharacterTextSplitter over CharacterTextSplitter?
-      A: RecursiveCharacterTextSplitter tries multiple separators in order:
-         ["\n\n", "\n", " ", ""] - respects document structure (paragraphs → sentences → words)
-    - Q: Why 1000 tokens with 200 overlap specifically?
-      A: Empirically tested sweet spot:
-         - 1000 tokens ≈ 750 words ≈ optimal for embedding models (512-1024 token window)
-         - 200 overlap prevents context loss at boundaries
-         - Tested alternatives: 500/100 (too fragmented), 1500/300 (too diluted)
+    Uses recursive character splitting with configurable chunk size and overlap.
     """
 
     def __init__(self):

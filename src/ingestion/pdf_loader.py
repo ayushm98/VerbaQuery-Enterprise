@@ -25,12 +25,6 @@ class PDFLoader:
 
         Returns:
             List of Document objects, one per page
-
-        Interview Defense:
-        - Q: Why page-level granularity?
-          A: Enables precise citation in final output. Users need exact page numbers.
-        - Q: Why LangChain Document instead of raw dict?
-          A: Standardized schema across LangChain ecosystem, makes integration seamless.
         """
         validate_pdf_file(pdf_path)
 

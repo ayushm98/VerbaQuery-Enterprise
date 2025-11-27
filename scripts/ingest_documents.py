@@ -2,22 +2,14 @@
 """
 Document Ingestion CLI Script
 
-Processes PDFs from raw directory through the complete ETL pipeline:
+Processes PDFs through the complete ETL pipeline:
 1. Load PDFs with page-level extraction
-2. Chunk into semantic units (1000 tokens, 200 overlap)
+2. Chunk into semantic units (configurable size and overlap)
 3. Build dual indexes (ChromaDB vector + BM25 keyword)
 
 Usage:
-    python scripts/ingest_documents.py --input data/raw/
-    python scripts/ingest_documents.py --input data/raw/ --rebuild
-
-Interview Defense:
-- Q: Why separate ingestion from query serving?
-  A: Separation of concerns - ingestion is expensive (embeddings cost money),
-     should run once. Query serving is frequent, should be fast.
-- Q: Why --rebuild flag?
-  A: Allows cache invalidation - if docs change, rebuild indexes.
-     Without flag, skips if indexes exist (faster iteration).
+    python scripts/ingest_documents.py --input data/
+    python scripts/ingest_documents.py --input data/ --rebuild
 """
 
 import argparse

@@ -11,37 +11,7 @@ logger = get_logger(__name__)
 class FlashrankReranker:
     """
     Cross-encoder re-ranking using Flashrank.
-
-    Interview Defense:
-    - Q: What's the difference between retrieval and re-ranking?
-      A: Two-stage process for efficiency:
-         Stage 1 (Retrieval): Fast, cheap, broad recall
-           - Embedding lookup in ChromaDB: ~50ms for 10K docs
-           - Retrieve top 10-50 candidates (cast wide net)
-         Stage 2 (Re-ranking): Slow, expensive, high precision
-           - Cross-encoder model: ~200ms for 10 docs
-           - Re-score candidates, keep top 5 (filter noise)
-         This is much faster than cross-encoding all 10K docs upfront
-    - Q: Why use a cross-encoder for re-ranking?
-      A: Architecture advantage:
-         Bi-encoder (used in retrieval): Encode query and doc separately, then compare
-           - Fast: Pre-compute doc embeddings, query embedding at runtime
-           - Less accurate: Can't see query-doc interactions
-         Cross-encoder (used in re-ranking): Encode query+doc together
-           - Slow: Must process each query-doc pair
-           - More accurate: Sees full interaction, better relevance
-    - Q: What is Flashrank specifically?
-      A: Lightweight cross-encoder library:
-         - Models: ms-marco-MiniLM-L-12-v2 (default), ms-marco-MultiBERT-L-12
-         - Size: ~120MB (vs BERT ~400MB)
-         - Speed: Optimized for CPU inference (no GPU needed)
-         - Quality: Trained on MS MARCO passage ranking dataset
-    - Q: Why retrieve 10 docs but only pass 5 to LLM?
-      A: Context window optimization:
-         - GPT-4 context: 128K tokens, but accuracy drops with "noise"
-         - Research ("Lost in the Middle"): LLMs focus on start/end of context
-         - Solution: Send only highest-quality docs (top 5 after re-ranking)
-         - Cost savings: Fewer tokens = lower API cost
+    Applies a trained cross-encoder model to re-score and rank retrieved candidates.
     """
 
     def __init__(self, model_name: str = "ms-marco-MiniLM-L-12-v2"):
@@ -83,17 +53,6 @@ class FlashrankReranker:
         2. Score each query-document pair with cross-encoder
         3. Sort by relevance score (descending)
         4. Return top-k documents
-
-        Interview Defense:
-        - Q: What's the computational cost?
-          A: Linear in number of documents:
-             - 10 docs × 200ms/doc = 2 seconds (acceptable for interactive query)
-             - 100 docs × 200ms/doc = 20 seconds (too slow, hence two-stage approach)
-        - Q: How accurate is re-ranking?
-          A: MS MARCO benchmark results:
-             - Retrieval-only (BM25): MRR@10 = 0.18
-             - Retrieval + Re-ranking: MRR@10 = 0.36 (2x improvement)
-             - Real-world: ~20-30% better precision in top-5 results
         """
         if top_k is None:
             top_k = self.settings.final_retrieval_count

@@ -7,20 +7,6 @@ Production-grade RAG interface with:
 - Relevance score visualization
 - Query history
 - Error handling
-
-Interview Defense:
-- Q: Why Streamlit vs Flask/FastAPI?
-  A: Rapid prototyping for ML/AI apps:
-     - Built-in widgets (chat, file upload, charts)
-     - Auto-reload on code changes
-     - No frontend code needed (HTML/CSS/JS)
-     - Trade-off: Less customizable than React, but faster to build
-     - Production path: Migrate to FastAPI backend + React frontend
-- Q: How do you handle state in Streamlit?
-  A: st.session_state for persistence:
-     - Chat history stored in session_state
-     - Survives widget reruns (Streamlit reruns script on every interaction)
-     - Alternative: External database (Redis, PostgreSQL)
 """
 
 import streamlit as st
@@ -123,17 +109,7 @@ def display_chat_history():
 
 
 def display_sources(sources):
-    """
-    Display source citations with expandable details.
-
-    Interview Defense:
-    - Q: Why show sources to users?
-      A: Trust and verification:
-         - Users can verify claims by checking source documents
-         - Builds confidence in system accuracy
-         - Compliance requirement for regulated industries
-         - Debugging: Can trace wrong answers to source retrieval issues
-    """
+    """Display source citations with expandable details."""
     if not sources:
         return
 
@@ -169,26 +145,7 @@ def display_sources(sources):
 
 
 def process_query(query_text: str):
-    """
-    Process user query through RAG pipeline.
-
-    Interview Defense:
-    - Q: How do you handle errors in production?
-      A: Graceful degradation:
-         - Try-except at query level (don't crash UI)
-         - Log errors for debugging
-         - Show user-friendly error messages
-         - Fallback responses when components fail
-    - Q: What's the average response time?
-      A: Breakdown (~3-5 seconds total):
-         - Retrieval: ~500ms (ChromaDB + BM25)
-         - Re-ranking: ~2s (Flashrank on 10 docs)
-         - Generation: ~1-2s (GPT-4 API call)
-         - Optimization paths:
-           * Cache frequent queries (Redis)
-           * Batch re-ranking
-           * Use GPT-3.5-turbo (10x faster, slight quality drop)
-    """
+    """Process user query through RAG pipeline."""
     query_engine = st.session_state.query_engine
 
     # Display user message

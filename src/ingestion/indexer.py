@@ -15,17 +15,7 @@ logger = get_logger(__name__)
 class DualIndexer:
     """
     Create and manage dual indexes: vector (ChromaDB) + keyword (BM25).
-
-    Interview Defense:
-    - Q: Why maintain two separate indexes?
-      A: Complementary strengths:
-         - Vector index: Semantic similarity (e.g., "automobile" matches "car")
-         - BM25: Exact term matching (e.g., policy numbers, product codes)
-         - Hybrid approach proven to outperform single method by 15-30%
-    - Q: Why persist both indexes to disk?
-      A: Avoid re-embedding on every application restart (expensive and slow)
-         - ChromaDB: Native persistence support
-         - BM25: Pickle serialization (lightweight, <10MB for 10K docs)
+    Combines semantic and lexical search capabilities for comprehensive retrieval.
     """
 
     def __init__(self):

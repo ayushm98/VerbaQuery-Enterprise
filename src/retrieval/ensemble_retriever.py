@@ -12,27 +12,7 @@ logger = get_logger(__name__)
 class HybridRetriever:
     """
     Ensemble retriever combining vector (dense) and keyword (sparse) search.
-
-    Interview Defense:
-    - Q: Why hybrid search instead of vector-only (like most RAG demos)?
-      A: Research-backed improvement:
-         - ColBERT paper: Hybrid retrieval +15-30% accuracy over single method
-         - Vector search: Good for semantic similarity, weak on exact matches
-         - Keyword search: Good for exact matches, weak on paraphrasing
-         - Ensemble: Best of both worlds
-    - Q: How do you combine scores from different retrieval methods?
-      A: Reciprocal Rank Fusion (RRF):
-         - Problem: Vector scores (0-1) and BM25 scores (0-100+) incomparable
-         - Solution: Use rank position instead of raw scores
-         - Formula: RRF(d) = Σ 1 / (k + rank(d))
-         - Then weight by ensemble weights (vector vs keyword)
-    - Q: Why 50/50 weighting as default?
-      A: Neutral baseline for general text:
-         - Production: A/B test to optimize (often 60/40 vector/keyword)
-         - Domain-specific tuning:
-           * Technical docs with codes: 40/60 (favor keyword)
-           * General knowledge: 60/40 (favor semantic)
-         - Configurable via .env for easy experimentation
+    Uses Reciprocal Rank Fusion to merge results from multiple retrieval methods.
     """
 
     def __init__(self):
@@ -122,14 +102,6 @@ class HybridRetriever:
         Generate unique document identifier from metadata.
 
         Uses chunk_id if available, otherwise constructs from source + page + chunk_index.
-
-        Interview Defense:
-        - Q: Why not use document content as ID?
-          A: Content can be large (1000 tokens), hashing is slower
-             Metadata provides unique identifiers (chunk_id, source+page+chunk)
-        - Q: What if chunk_id is missing?
-          A: Fallback to composite key: "filename_page42_chunk3"
-             Handles legacy data or different indexing strategies
         """
         metadata = doc.metadata
 
