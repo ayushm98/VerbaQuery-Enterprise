@@ -114,3 +114,17 @@ class HybridRetriever:
         chunk_idx = metadata.get("chunk_index", 0)
 
         return f"{source}_page{page}_chunk{chunk_idx}"
+
+    def reload_indexes(self) -> None:
+        """Reload both underlying indexes after updates."""
+        self.logger.info("Reloading hybrid retriever indexes")
+        self.vector_retriever.reload_index()
+        self.keyword_retriever.reload_index()
+        self.logger.info("Hybrid retriever indexes reloaded")
+
+    def close(self) -> None:
+        """Close all retriever connections to release locks."""
+        self.logger.info("Closing hybrid retriever connections")
+        if hasattr(self.vector_retriever, 'close'):
+            self.vector_retriever.close()
+        self.logger.info("Hybrid retriever connections closed")

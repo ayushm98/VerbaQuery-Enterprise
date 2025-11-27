@@ -172,3 +172,10 @@ class QueryEngine:
                 "content_preview": doc.page_content[:200] + "..."  # First 200 chars
             })
         return sources
+
+    def close(self) -> None:
+        """Close all connections to release database locks."""
+        self.logger.info("Closing QueryEngine connections")
+        if hasattr(self, 'retriever') and hasattr(self.retriever, 'close'):
+            self.retriever.close()
+        self.logger.info("QueryEngine connections closed")

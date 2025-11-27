@@ -2,6 +2,7 @@
 .env
 *.env
 !.env.example
+.streamlit/secrets.toml
 
 # Python
 __pycache__/
@@ -18,9 +19,12 @@ ENV/
 data/raw/*
 data/processed/*
 data/indexes/*
+data/uploads/*
+data/*.pdf
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/indexes/.gitkeep
+!data/uploads/.gitkeep
 
 # IDE
 .vscode/
@@ -42,8 +46,5 @@ data/models/*
 !data/models/.gitkeep
 
 # Local documentation (keep for reference, don't track)
-DEPLOYMENT_GUIDE.md
-PROJECT_CONCEPTS_DEEP_DIVE.md
-QUICK_START.md
-INTERVIEW_READY.md
-IMPLEMENTATION_LOG.md
+*.md
+!README.md

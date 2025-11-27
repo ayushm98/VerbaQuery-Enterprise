@@ -1,16 +1,36 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Try to import streamlit secrets for cloud deployment
+try:
+    import streamlit as st
+    HAS_STREAMLIT = True
+except ImportError:
+    HAS_STREAMLIT = False
+
+
+def get_api_key() -> str:
+    """Get OpenAI API key from Streamlit secrets or environment."""
+    # First try Streamlit secrets (for cloud deployment)
+    if HAS_STREAMLIT:
+        try:
+            return st.secrets["OPENAI_API_KEY"]
+        except Exception:
+            pass
+    # Fall back to environment variable
+    return os.getenv("OPENAI_API_KEY", "")
 
 
 class Settings(BaseSettings):
     """
     Centralized configuration management using Pydantic.
-    Loads from environment variables and .env file.
+    Loads from environment variables, .env file, or Streamlit secrets.
     """
 
     # OpenAI Configuration
-    openai_api_key: str
+    openai_api_key: str = ""
     openai_embedding_model: str = "text-embedding-3-small"
     openai_chat_model: str = "gpt-4-turbo-preview"
 
@@ -27,6 +47,9 @@ class Settings(BaseSettings):
     # Database Configuration
     chroma_persist_directory: Path = Path("./data/indexes/chroma")
     bm25_index_path: Path = Path("./data/indexes/bm25_index.pkl")
+
+    # Upload Configuration
+    max_upload_size_mb: int = 50
 
     # Application Configuration
     log_level: str = "INFO"
@@ -49,5 +72,10 @@ def get_settings() -> Settings:
     """
     Singleton pattern for settings.
     Cached to avoid repeated environment variable parsing.
+    Supports both .env files and Streamlit secrets.
     """
+    # Get API key from Streamlit secrets or environment
+    api_key = get_api_key()
+    if api_key:
+        return Settings(openai_api_key=api_key)
     return Settings()

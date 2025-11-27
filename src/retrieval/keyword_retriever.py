@@ -96,3 +96,27 @@ class KeywordRetriever:
         except Exception as e:
             self.logger.error(f"BM25 retrieval with scores failed: {str(e)}")
             return []
+
+    def reload_index(self, index_path: Path = None) -> None:
+        """
+        Reload BM25 index from disk after updates.
+
+        Args:
+            index_path: Path to pickled BM25 index (uses default if not specified)
+        """
+        if index_path is None:
+            index_path = self.settings.bm25_index_path
+
+        self.logger.info(f"Reloading BM25 index from {index_path}")
+
+        try:
+            with open(index_path, 'rb') as f:
+                index_data = pickle.load(f)
+
+            self.bm25_index = index_data["bm25"]
+            self.documents = index_data["documents"]
+
+            self.logger.info(f"Reloaded BM25 index ({len(self.documents)} docs)")
+        except Exception as e:
+            self.logger.error(f"Failed to reload BM25 index: {str(e)}")
+            raise
