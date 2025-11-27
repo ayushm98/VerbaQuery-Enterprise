@@ -3,6 +3,7 @@ from pathlib import Path
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
+import chromadb
 from config import get_settings
 from src.utils import get_logger
 
@@ -35,10 +36,23 @@ class VectorRetriever:
             openai_api_key=self.settings.openai_api_key
         )
 
+        # Create ChromaDB client with settings that work in cloud environments
+        client_settings = chromadb.config.Settings(
+            anonymized_telemetry=False,
+            allow_reset=True,
+            is_persistent=True
+        )
+
+        # Create persistent client
+        client = chromadb.PersistentClient(
+            path=str(persist_directory),
+            settings=client_settings
+        )
+
         # Load persisted ChromaDB
         try:
             self.vectorstore = Chroma(
-                persist_directory=str(persist_directory),
+                client=client,
                 embedding_function=self.embeddings,
                 collection_name="verbaquery_docs"
             )
@@ -100,9 +114,22 @@ class VectorRetriever:
         # Close existing connection first
         self.close()
 
+        # Create ChromaDB client with settings that work in cloud environments
+        client_settings = chromadb.config.Settings(
+            anonymized_telemetry=False,
+            allow_reset=True,
+            is_persistent=True
+        )
+
+        # Create persistent client
+        client = chromadb.PersistentClient(
+            path=str(persist_directory),
+            settings=client_settings
+        )
+
         try:
             self.vectorstore = Chroma(
-                persist_directory=str(persist_directory),
+                client=client,
                 embedding_function=self.embeddings,
                 collection_name="verbaquery_docs"
             )

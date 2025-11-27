@@ -11,6 +11,7 @@ import shutil
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
+import chromadb
 from rank_bm25 import BM25Okapi
 from config import get_settings
 from src.utils import get_logger
@@ -108,12 +109,25 @@ class IncrementalIndexer:
 
         self.logger.info(f"Creating vector index for {len(documents)} documents")
 
+        # Create ChromaDB client with settings that work in cloud environments
+        client_settings = chromadb.config.Settings(
+            anonymized_telemetry=False,
+            allow_reset=True,
+            is_persistent=True
+        )
+
+        # Create persistent client
+        client = chromadb.PersistentClient(
+            path=str(persist_directory),
+            settings=client_settings
+        )
+
         # Create fresh embeddings and ChromaDB for each indexing operation
         embeddings = self._get_embeddings()
         vectorstore = Chroma.from_documents(
             documents=documents,
             embedding=embeddings,
-            persist_directory=str(persist_directory),
+            client=client,
             collection_name="verbaquery_docs"
         )
 
