@@ -1,4 +1,5 @@
 import os
+import tempfile
 from functools import lru_cache
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -21,6 +22,26 @@ def get_api_key() -> str:
             pass
     # Fall back to environment variable
     return os.getenv("OPENAI_API_KEY", "")
+
+
+def is_cloud_environment() -> bool:
+    """Detect if running in Streamlit Cloud or similar cloud environment."""
+    # Check for common cloud environment indicators
+    return (
+        os.getenv("STREAMLIT_SHARING_MODE") is not None or
+        os.getenv("STREAMLIT_CLOUD") is not None or
+        HAS_STREAMLIT and hasattr(st, "secrets") and "OPENAI_API_KEY" in st.secrets
+    )
+
+
+def get_writable_dir() -> Path:
+    """Get a writable directory for cloud environments."""
+    if is_cloud_environment():
+        # Use /tmp for cloud deployments (writable directory)
+        return Path(tempfile.gettempdir())
+    else:
+        # Use local ./data for local development
+        return Path("./data")
 
 
 class Settings(BaseSettings):
@@ -62,6 +83,14 @@ class Settings(BaseSettings):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        # Use writable directory in cloud environments
+        base_dir = get_writable_dir()
+
+        # Update paths to use writable directory
+        self.chroma_persist_directory = base_dir / "indexes" / "chroma"
+        self.bm25_index_path = base_dir / "indexes" / "bm25_index.pkl"
+
         # Ensure directory paths exist
         self.chroma_persist_directory.parent.mkdir(parents=True, exist_ok=True)
         self.bm25_index_path.parent.mkdir(parents=True, exist_ok=True)
